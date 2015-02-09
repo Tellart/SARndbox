@@ -169,6 +169,11 @@ class CalibrateProjector:public Vrui::Application,public GLObject
 	
 	/* Elements: */
 	private:
+			/*****
+	added by Zaza & Pier
+	******/
+	float calibrationScale;
+	//*************
 	int imageSize[2]; // Size of projector image
 	int numTiePoints[2]; // Number of tie points in x and y
 	OPlane basePlane; // Base plane of the configured sandbox area
@@ -182,6 +187,8 @@ class CalibrateProjector:public Vrui::Application,public GLObject
 	PixelDepthCorrection* pixelDepthCorrection; // Buffer of per-pixel depth correction coefficients
 	Kinect::FrameSource::IntrinsicParameters cameraIps; // Intrinsic parameters of the Kinect camera
 	
+
+
 	bool capturingBackground; // Flag if the Kinect camera is currently capturing a background frame
 	
 	Threads::TripleBuffer<Kinect::FrameBuffer> rawFrames; // Triple buffer for raw depth frames from the Kinect camera

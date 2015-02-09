@@ -488,6 +488,8 @@ Sandbox::Sandbox(int& argc,char**& argv,char**& appDefaults)
 	double rainElevationMin=-1000.0;
 	double rainElevationMax=1000.0;
 	double evaporationRate=0.0;
+	marginLeft=-1;
+	marginRight=-1;
 	for(int i=1;i<argc;++i)
 		{
 		if(argv[i][0]=='-')
@@ -567,6 +569,13 @@ Sandbox::Sandbox(int& argc,char**& argv,char**& appDefaults)
 				rainElevationMin=atof(argv[i]);
 				++i;
 				rainElevationMax=atof(argv[i]);
+				}
+			else if(strcasecmp(argv[i]+1,"ss")==0)
+				{
+				++i;
+				marginLeft=atoi(argv[i]);
+				++i;
+				marginRight=atoi(argv[i]);
 				}
 			else if(strcasecmp(argv[i]+1,"rs")==0)
 				{
@@ -658,6 +667,10 @@ Sandbox::Sandbox(int& argc,char**& argv,char**& appDefaults)
 		std::cout<<"     Enables elevation color mapping"<<std::endl;
 		std::cout<<"  -rws"<<std::endl;
 		std::cout<<"     Renders water surface as geometric surface"<<std::endl;
+		std::cout<<"  -ss <margin left> <margin right>"<<std::endl;
+		std::cout<<"     Specify left and right margin for cropping"<<std::endl;
+		std::cout<<"     Default: 0 , 0"<<std::endl;
+		
 		}
 	
 	/* Enable background USB event handling: */
@@ -881,6 +894,7 @@ Sandbox::Sandbox(int& argc,char**& argv,char**& appDefaults)
 
 Sandbox::~Sandbox(void)
 	{
+	int tmp=system("gconftool-2 --set --type=list --list-type=string /apps/compiz-1/general/screen0/options/active_plugins '[core,composite,opengl,compiztoolbox,imgpng,move,gnomecompat,vpswitch,mousepoll,wall,resize,unitymtgrabhandles,place,grid,regex,session,snap,animation,workarounds,expo,fade,ezoom,scale,decor,unityshell]'");
 	/* Stop streaming depth frames: */
 	camera->stopStreaming();
 	delete camera;
@@ -933,6 +947,7 @@ void Sandbox::display(GLContextData& contextData) const
 	DataItem* dataItem=contextData.retrieveDataItem<DataItem>(this);
 	
 	if(waterTable!=0)
+	
 		{
 		/* Update the water table's bathymetry: */
 		waterTable->updateBathymetry(*surfaceRenderer,contextData);
@@ -1153,10 +1168,48 @@ void Sandbox::display(GLContextData& contextData) const
 	
 	if(fixProjectorView)
 		{
+		
+
+    	
+		
+    	
+
+
 		/* Go back to regular navigation space: */
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
+			if(marginRight != -1 && marginLeft !=-1)
+			{
+				//CROPPING
+		    	glLoadIdentity();
+		    	int w=1024;
+				int h=768;
+		    	glOrtho( 0, w, 0, h, -1, 1);
+
+			    glMatrixMode( GL_MODELVIEW );
+		    	glLoadIdentity();
+
+		    	// important
+		    	glTranslatef( 0.5, 0.5, 0 );
+
+				glDisable(GL_LIGHTING); //disable light
+				glDisable(GL_DEPTH_TEST); //disable z-buffer
+			 	glColor3d( 0.00, 0.00, 0.00 );
+
+				int offset=100;
+				glRecti(w-marginRight,0,w,h);
+			
+				glRecti(0,0,marginLeft,h);
+
+				
+			}
+		
 		glMatrixMode(GL_MODELVIEW);
+	
+
+		
+		
+		   
 		}
 	}
 

@@ -180,6 +180,14 @@ CalibrateProjector::CalibrateProjector(int& argc,char**& argv)
 	toolFactory1->setButtonFunction(1,"Capture Background");
 	Vrui::getToolManager()->addClass(toolFactory1,Vrui::ToolManager::defaultToolFactoryDestructor);
 	
+
+	/*****
+	added by Zaza & Pier
+	******/
+	calibrationScale = 1;
+	//*************
+
+
 	/* Process command line parameters: */
 	bool printHelp=false;
 	std::string sandboxLayoutFileName=CONFIGDIR;
@@ -214,6 +222,7 @@ CalibrateProjector::CalibrateProjector(int& argc,char**& argv)
 					++i;
 					imageSize[j]=atoi(argv[i]);
 					}
+					std::cout<<"screensize: "<<imageSize[0]<<"x"<<imageSize[1]<<std::endl;
 				}
 			else if(strcasecmp(argv[i]+1,"tp")==0)
 				{
@@ -232,6 +241,11 @@ CalibrateProjector::CalibrateProjector(int& argc,char**& argv)
 				{
 				++i;
 				tiePointFileName=argv[i];
+				}
+			else if(strcasecmp(argv[i]+1,"cs")==0)
+				{
+				++i;
+				calibrationScale=atof(argv[i]);
 				}
 			}
 		}
@@ -262,6 +276,9 @@ CalibrateProjector::CalibrateProjector(int& argc,char**& argv)
 		std::cout<<"     Default: 1"<<std::endl;
 		std::cout<<"  -tpf <tie point file name>"<<std::endl;
 		std::cout<<"     Reads initial calibration tie points from a CSV file"<<std::endl;
+		std::cout<<"  -cs <calibration scale>"<<std::endl;
+		std::cout<<"     Sets the percentage of the screen size to calibrate within"<<std::endl;
+		std::cout<<"     Defualt: 1.00"<<std::endl;
 		}
 	
 	/* Read the sandbox layout file: */
@@ -465,6 +482,7 @@ void CalibrateProjector::frame(void)
 			if(numCaptureFrames==0)
 				{
 				/* Store the just-captured tie point: */
+				#if 0
 				TiePoint tp;
 				int pointIndex=int(tiePoints.size());
 				int xIndex=pointIndex%numTiePoints[0];
@@ -474,7 +492,20 @@ void CalibrateProjector::frame(void)
 				tp.p=PPoint(Scalar(x)+Scalar(0.5),Scalar(y)+Scalar(0.5));
 				tp.o=tiePointCombiner.getPoint();
 				tiePoints.push_back(tp);
-				
+				#else
+				TiePoint tp;
+				int pointIndex=int(tiePoints.size());
+				int xIndex=pointIndex%numTiePoints[0];
+				int yIndex=(pointIndex/numTiePoints[0])%numTiePoints[1];
+				int x=(xIndex+1)*(imageSize[0]*calibrationScale)/(numTiePoints[0]+1);
+				x+= imageSize[0]*((1-calibrationScale)/2);
+				int y=(yIndex+1)*(imageSize[1]*calibrationScale)/(numTiePoints[1]+1);
+				y+= imageSize[1]*((1-calibrationScale)/2);
+				tp.p=PPoint(Scalar(x)+Scalar(0.5),Scalar(y)+Scalar(0.5));
+				tp.o=tiePointCombiner.getPoint();
+				tiePoints.push_back(tp);
+				#endif
+
 				std::cout<<" done"<<std::endl;
 				std::cout<<"Tie point: "<<tp.p[0]<<", "<<tp.p[1]<<"; "<<tp.o[0]<<", "<<tp.o[1]<<", "<<tp.o[2]<<std::endl;
 				
@@ -521,13 +552,26 @@ void CalibrateProjector::display(GLContextData& contextData) const
 		}
 	else
 		{
+		#if 0
 		/* Calculate the screen-space position of the next tie point: */
 		int pointIndex=int(tiePoints.size());
 		int xIndex=pointIndex%numTiePoints[0];
 		int yIndex=(pointIndex/numTiePoints[0])%numTiePoints[1];
 		int x=(xIndex+1)*imageSize[0]/(numTiePoints[0]+1);
 		int y=(yIndex+1)*imageSize[1]/(numTiePoints[1]+1);
-		
+		#else
+		/* Calculate the screen-space position of the next tie point: */
+		int pointIndex=int(tiePoints.size());
+		int xIndex=pointIndex%numTiePoints[0];
+		int yIndex=(pointIndex/numTiePoints[0])%numTiePoints[1];
+		int x=(xIndex+1)*(imageSize[0]*calibrationScale)/(numTiePoints[0]+1);
+		x+= imageSize[0]*((1-calibrationScale)/2);
+		int y=(yIndex+1)*(imageSize[1]*calibrationScale)/(numTiePoints[1]+1);
+		y+= imageSize[1]*((1-calibrationScale)/2);
+
+		//std::cout<<"Tie point coordinates: "<<x<<", "<<y<<"; "<<std::endl;
+		#endif
+
 		/* Draw the next tie point: */
 		glBegin(GL_LINES);
 		glColor3f(1.0f,1.0f,1.0f);
